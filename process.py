@@ -1,6 +1,7 @@
 import click
 
-from src import add_src_to_sys_path, SpectrogramOfflineProcessor, InterpolationOfflineProcessor
+from src import add_src_to_sys_path, SpectrogramOfflineProcessor, InterpolationOfflineProcessor,\
+    SpectrogramInterpolationOfflineProcessor
 
 add_src_to_sys_path()
 
@@ -9,19 +10,24 @@ def cli():
     pass
 
 
+def common_options(function):
+    function = click.option('--model_name', default='wikiart', help='model name', type=str)(function)
+    function = click.option('--fps', default=24, help='frames per second', type=int)(function)
+    function = click.option('--random_seed', default=False, help='random seed', type=int)(function)
+    function = click.option('--start', default=0, help='Start time', type=int)(function)
+    function = click.option('--duration', default=None, help='Duration of video to make', type=int)(function)
+    function = click.option('--sr', default=None, help='sample rate', type=int)(function)
+    function = click.option('--frame_chunk_size', default=500, help='Number of frames to batch before writing to disk', type=int)(function)
+    function = click.option('--no_write', is_flag=True, help='Do not write out video.')(function)
+    function = click.argument('output_path')(function)
+    function = click.argument('input_path')(function)
+    return function
+
+
 @click.command()
-@click.option('--model_name', default='wikiart', help='model name', type=str)
-@click.option('--fps', default=24, help='frames per second', type=int)
-@click.option('--random_seed', default=False, help='random seed', type=int)
-@click.option('--start', default=0, help='Start time', type=int)
-@click.option('--duration', default=None, help='Duration of video to make', type=int)
-@click.option('--sr', default=None, help='sample rate', type=int)
+@common_options
 @click.option('--window_size', default=5, help='Window size', type=int)
 @click.option('--displacement_factor', default=0.1, help='Displacement factor', type=float)
-@click.option('--frame_chunk_size', default=500, help='Number of frames to batch before writing to disk', type=int)
-@click.option('--no_write', is_flag=True, help='Do not write out video.')
-@click.argument('input_path')
-@click.argument('output_path')
 def spectro(model_name, fps, random_seed, start, duration, sr, window_size, displacement_factor,
             frame_chunk_size, no_write, input_path, output_path):
     print('================ PARAMETERS')
@@ -33,19 +39,9 @@ def spectro(model_name, fps, random_seed, start, duration, sr, window_size, disp
     processor.process_file(input_path, output_path, start, duration, sr, not no_write, window_size, displacement_factor)
 
 
-# todo: we need a base command to inherit from
 @click.command()
-@click.option('--model_name', default='wikiart', help='model name', type=str)
+@common_options
 @click.option('--n_points', default=3, help='Number of points to interpolate between', type=int)
-@click.option('--fps', default=24, help='frames per second', type=int)
-@click.option('--random_seed', default=False, help='random seed', type=int)
-@click.option('--start', default=0, help='Start time', type=int)
-@click.option('--duration', default=None, help='Duration of video to make', type=int)
-@click.option('--sr', default=None, help='sample rate', type=int)
-@click.option('--frame_chunk_size', default=500, help='Number of frames to batch before writing to disk', type=int)
-@click.option('--no_write', is_flag=True, help='Do not write out video.')
-@click.argument('input_path')
-@click.argument('output_path')
 def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
            input_path, output_path):
     print('================ PARAMETERS')
@@ -57,8 +53,26 @@ def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_ch
     processor.process_file(input_path, output_path, start, duration, sr, not no_write, n_points)
 
 
+@click.command()
+@common_options
+@click.option('--window_size', default=5, help='Window size', type=int)
+@click.option('--displacement_factor', default=0.1, help='Displacement factor', type=float)
+@click.option('--n_points', default=3, help='Number of points to interpolate between', type=int)
+def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
+           input_path, output_path, window_size, displacement_factor, n_points):
+    print('================ PARAMETERS')
+    print(model_name, fps, random_seed, input_path, output_path, duration, )
+
+    # todo: add auto output file name here
+
+    processor = SpectrogramInterpolationOfflineProcessor(model_name, fps, random_seed, frame_chunk_size)
+    processor.process_file(input_path, output_path, start, duration, sr, not no_write, window_size, displacement_factor,
+                           None, n_points)
+
+
 cli.add_command(spectro)
 cli.add_command(interp)
+cli.add_command(spectro_interp)
 
 if __name__ == '__main__':
     cli()
