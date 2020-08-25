@@ -9,6 +9,8 @@ LATENT_DIR = ROOT_DIR / 'latent_representations'
 TEST_SOUND_SHORT = LIB_DIR / 'sound/test.wav'
 DNNLIB_PATH = LIB_DIR / 'dnnlib'
 USE_RANDOM_SEED = True
+LIKES_FILE = LATENT_DIR / 'likes.pkl'
+DISLIKES_FILE = LATENT_DIR / 'dislikes.pkl'
 
 ONLINE_MODEL_PATHS_TF = {
     # 'albums': 'https://drive.google.com/file/d/1KfzkR-4Gpc8MMpI0hygCz2X9Yg-9-hPv/view?usp=sharing',

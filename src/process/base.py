@@ -18,10 +18,9 @@ class BaseOfflineProcessor:
     def __init__(self, model_name: str = 'cats', fps=5, random_seed=False, frame_chunk_size=500):
         self.fps = fps
         self.frame_chunk_size = frame_chunk_size
-        if model_name not in AVAILABLE_STYLEGAN_MODELS and model_name not in AVAILABLE_STYLEGAN_MODELS:
-            print(f'Model {model_name} not found!!!')
         self.random_seed = random_seed
         self.temp_dir, self.temp_path = None, None
+
         if model_name in AVAILABLE_STYLEGAN_MODELS:
             self.model_name = model_name
         else:
@@ -30,7 +29,6 @@ class BaseOfflineProcessor:
             self.model_name = fallback_model
 
         self.model = StyleGANModel(AVAILABLE_STYLEGAN_MODELS[self.model_name], random_seed=random_seed, reduced_memory=False)
-        self.controller = None
 
         self.latent_seed = self.get_random_points()
 
