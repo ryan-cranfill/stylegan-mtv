@@ -3,6 +3,7 @@ from pathlib import Path
 SETTINGS_FILE = Path(__file__).absolute()
 LIB_DIR = SETTINGS_FILE.parent
 ROOT_DIR = LIB_DIR.parent
+OUTPUT_DIR = ROOT_DIR / 'output'
 MODEL_DIR = ROOT_DIR / 'models'
 LATENT_DIR = ROOT_DIR / 'latent_representations'
 TEST_SOUND_SHORT = LIB_DIR / 'sound/test.wav'
