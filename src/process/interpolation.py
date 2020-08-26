@@ -1,4 +1,5 @@
 import math
+import pickle
 import librosa
 import tempfile
 import numpy as np
@@ -6,17 +7,25 @@ from tqdm import tqdm
 from pathlib import Path
 
 from .base import BaseOfflineProcessor
+from src.utils import warn
 
 
 class InterpolationOfflineProcessor(BaseOfflineProcessor):
     def __init__(self, model_name='cats', fps=5, random_seed=False, frame_chunk_size=500):
         super().__init__(model_name, fps, random_seed, frame_chunk_size)
 
-    def make_checkpoints(self, duration, n_points=3):
+    def make_checkpoints(self, duration, n_points=3, likes_file=None):
         """
         Returns a list of tuples with timestamps of when to hit which random point
         """
-        points = self.get_random_points(n_points)
+        if likes_file:
+            with open(likes_file, 'rb') as f:
+                likes = pickle.load(f)
+            rng = np.random.default_rng()
+            points = rng.choice(likes, n_points)
+        else:
+            points = self.get_random_points(n_points)
+
         checkpoints = []
         for i in range(n_points):
             timestamp = duration * (i / (n_points - 1))
@@ -31,10 +40,10 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
         ratio = timestamp_centered / (end_ts - beginning_ts)
         return (((1 - ratio) * beginning_vec) + (end_vec * ratio)).reshape(1, -1)
 
-    def get_images(self, sound_data, total_frames, duration, n_points):
+    def get_images(self, sound_data, total_frames, duration, n_points, likes_file=None):
         images = {}
 
-        checkpoints = self.make_checkpoints(duration, n_points)
+        checkpoints = self.make_checkpoints(duration, n_points, likes_file)
 
         beginning, end = checkpoints[0], checkpoints[1]
         checkpoint_idx = 0
@@ -60,19 +69,20 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
         return images
 
     def process_file(self, input_path: str, output_path: str, start=0, duration=None, sr=None,
-                     write=True, n_points=3):
+                     write=True, n_points=3, likes_file=None):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.temp_path = Path(self.temp_dir.name)
 
-        if n_points > 2:
-            print('WARN: n_points must be >=2, setting to 2')
+        if n_points < 2:
+            warn(f'WARN: n_points must be >=2, setting to 2 (received {n_points})')
             n_points = 2
 
         sound_data, sample_rate = librosa.load(input_path, sr=sr, offset=start, duration=duration)
         duration = sound_data.shape[0] / sample_rate
         total_frames = math.ceil(duration * self.fps)
+        print('********* My duration:', duration, n_points, likes_file)
 
-        self.get_images(sound_data, total_frames, duration, n_points)
+        self.get_images(sound_data, total_frames, duration, n_points, likes_file)
 
         return self.create_video(duration, input_path, output_path, write=write, start=start)
 

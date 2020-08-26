@@ -12,7 +12,7 @@ DEFAULT_SPECTRO_PARAMS = dict(
     # n_fft=2048,
     n_fft=8192,
     hop_length=512,
-    n_mels=256,
+    n_mels=128,
     fmin=20,
     fmax=20000
 )
@@ -22,10 +22,11 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
     def __init__(self, model_name='cats', fps=5, random_seed=False, frame_chunk_size=500):
         super().__init__(model_name, fps, random_seed, frame_chunk_size)
 
-    def get_images(self, sound_data, sample_rate, spectrogram_params: dict, window_size=1, displacement_factor=0.1, n_points=3):
+    def get_images(self, sound_data, sample_rate, spectrogram_params: dict, window_size=1, displacement_factor=0.1,
+                   n_points=3, likes_file=None):
         spectrogram = self.sound_to_mel_spectrogram(sound_data, sample_rate, spectrogram_params)
         duration = sound_data.shape[0] / sample_rate
-        checkpoints = self.make_checkpoints(duration, n_points)
+        checkpoints = self.make_checkpoints(duration, n_points, likes_file)
 
         beginning, end = checkpoints[0], checkpoints[1]
         checkpoint_idx = 0
@@ -55,7 +56,8 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
         return images
 
     def process_file(self, input_path: str, output_path: str, start=0, duration=None, sr=None,
-                     write=True, window_size=1, displacement_factor=0.1, spectrogram_params=None, n_points=3):
+                     write=True, window_size=1, displacement_factor=0.1, spectrogram_params=None, n_points=3,
+                     likes_file=None):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.temp_path = Path(self.temp_dir.name)
 
@@ -63,7 +65,7 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
             spectrogram_params = DEFAULT_SPECTRO_PARAMS
         sound_data, sample_rate = librosa.load(input_path, sr=sr, offset=start, duration=duration)
 
-        self.get_images(sound_data, sample_rate, spectrogram_params, window_size, displacement_factor, n_points)
+        self.get_images(sound_data, sample_rate, spectrogram_params, window_size, displacement_factor, n_points, likes_file)
 
         duration = sound_data.shape[0] / sample_rate
         return self.create_video(duration, input_path, output_path, write=write, start=start)
