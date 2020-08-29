@@ -1,6 +1,6 @@
 import click
 
-from utils import make_output_path
+from utils import make_output_path, download_audio_from_youtube
 from src import add_src_to_sys_path, SpectrogramOfflineProcessor, InterpolationOfflineProcessor, \
     SpectrogramInterpolationOfflineProcessor
 
@@ -24,7 +24,8 @@ def common_options(function):
                             type=int)(function)
     function = click.option('--no_write', is_flag=True, help='Do not write out video.')(function)
     function = click.option('-o', '--output_path', default='', help='Output path', type=str)(function)
-    function = click.argument('input_path')(function)
+    function = click.option('-y', '--youtube_url', default=None, help='Youtube URl', type=str)(function)
+    function = click.argument('input_path', nargs=-1)(function)
     return function
 
 
@@ -33,7 +34,13 @@ def common_options(function):
 @click.option('--window_size', default=5, help='Window size', type=int)
 @click.option('--displacement_factor', default=0.1, help='Displacement factor', type=float)
 def spectro(model_name, fps, random_seed, start, duration, sr, window_size, displacement_factor,
-            frame_chunk_size, no_write, input_path, output_path):
+            frame_chunk_size, no_write, input_path, output_path, youtube_url):
+    if youtube_url:
+        input_path = download_audio_from_youtube(youtube_url)
+
+    if not input_path:
+        raise ValueError('Must provide input filepath or youtube path via -y')
+
     if not output_path:
         output_path = make_output_path(input_path)
     print('================ PARAMETERS')
@@ -50,7 +57,13 @@ def spectro(model_name, fps, random_seed, start, duration, sr, window_size, disp
 @click.option('--n_points', default=3, help='Number of points to interpolate between', type=int)
 @click.option('-l', '--likes_file', default=None, help='Path to likes file pickle', type=str)
 def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
-           input_path, output_path, likes_file):
+           input_path, output_path, likes_file, youtube_url):
+    if youtube_url:
+        input_path = download_audio_from_youtube(youtube_url)
+
+    if not input_path:
+        raise ValueError('Must provide input filepath or youtube path via -y')
+
     if not output_path:
         output_path = make_output_path(input_path)
     print('================ PARAMETERS')
@@ -66,9 +79,16 @@ def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_ch
 @click.option('--n_points', default=3, help='Number of points to interpolate between', type=int)
 @click.option('-l', '--likes_file', default=None, help='Path to likes file pickle', type=str)
 def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
-                   input_path, output_path, window_size, displacement_factor, n_points, likes_file):
+                   input_path, output_path, window_size, displacement_factor, n_points, likes_file, youtube_url):
+    if youtube_url:
+        input_path = download_audio_from_youtube(youtube_url)
+
+    if not input_path:
+        raise ValueError('Must provide input filepath or youtube path via -y')
+
     if not output_path:
         output_path = make_output_path(input_path)
+
     print('================ PARAMETERS')
     print(model_name, fps, random_seed, input_path, output_path, duration, )
 
