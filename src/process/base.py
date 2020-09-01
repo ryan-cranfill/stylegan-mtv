@@ -28,7 +28,7 @@ class BaseOfflineProcessor:
             warn(f'Model {model_name} not available, falling back to {fallback_model}')
             self.model_name = fallback_model
 
-        self.model = StyleGANModel(AVAILABLE_STYLEGAN_MODELS[self.model_name], random_seed=random_seed, reduced_memory=False)
+        self.model = StyleGANModel(AVAILABLE_STYLEGAN_MODELS[self.model_name], random_seed=random_seed, reduced_memory=True)
 
         self.latent_seed = self.get_random_points()
 

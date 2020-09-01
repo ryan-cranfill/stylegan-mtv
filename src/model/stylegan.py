@@ -9,6 +9,7 @@ from src.utils import find_stylegan_models, load_latent_reps
 
 AVAILABLE_MODELS = find_stylegan_models()
 LOAD_ONLY = ['wikiart']
+BATCH_SIZE = 1
 
 
 class StyleGANModel:
@@ -29,7 +30,7 @@ class StyleGANModel:
 
         if reduced_memory:
             print('using reduced GPU memory')
-            self.gpu_options.per_process_gpu_memory_fraction = 0.25
+            self.gpu_options.per_process_gpu_memory_fraction = 0.85
         else:
             print('i will use all the GPU memory i want and you cant stop me')
 
@@ -84,6 +85,21 @@ class StyleGANModel:
             out_img = final_img
 
         return out_img
+
+    def run_images(self, latent_vecs: np.ndarray, use_base_dlatent=False):
+        with self.sess.as_default():
+            with self.graph.as_default():
+                src_dlatents = self.model.components.mapping.run(latent_vecs, None)  # [seed, layer, component]
+
+                if use_base_dlatent and self.base_dlatent is not None:
+                    src_dlatents = (src_dlatents * 0.24) + self.base_dlatent
+
+                images = self.model.components.synthesis.run(src_dlatents, randomize_noise=False,
+                                                             truncation_psi=0.5, output_transform=self.img_fmt, minibatch_size=8)
+
+        # final_imgs = images
+        final_imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in images]
+        return final_imgs
 
     def set_base_dlatent(self, latent_rep):
         self.base_dlatent = latent_rep

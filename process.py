@@ -37,6 +37,8 @@ def spectro(model_name, fps, random_seed, start, duration, sr, window_size, disp
             frame_chunk_size, no_write, input_path, output_path, youtube_url):
     if youtube_url:
         input_path = download_audio_from_youtube(youtube_url)
+    else:
+        input_path = input_path[0]
 
     if not input_path:
         raise ValueError('Must provide input filepath or youtube path via -y')
@@ -60,6 +62,8 @@ def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_ch
            input_path, output_path, likes_file, youtube_url):
     if youtube_url:
         input_path = download_audio_from_youtube(youtube_url)
+    else:
+        input_path = input_path[0]
 
     if not input_path:
         raise ValueError('Must provide input filepath or youtube path via -y')
@@ -82,6 +86,8 @@ def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chun
                    input_path, output_path, window_size, displacement_factor, n_points, likes_file, youtube_url):
     if youtube_url:
         input_path = download_audio_from_youtube(youtube_url)
+    else:
+        input_path = input_path[0]
 
     if not input_path:
         raise ValueError('Must provide input filepath or youtube path via -y')

@@ -61,7 +61,7 @@ def download_audio_from_youtube(url):
     video = pafy.new(url)
     print('video got...')
     title = video.title
-    bestaudio = video.getbestaudio()
+    bestaudio = video.getbestaudio('m4a')
     filename = format_filename(f'{title}.{bestaudio.extension}')
     path = INPUT_DIR / filename
 

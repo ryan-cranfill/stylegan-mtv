@@ -1,8 +1,14 @@
 tensorflow-gpu
-scipy
+scipy~=1.5.2
 greenlet
 opencv-python
 imageio
 pyaudio
 python-dotenv
 ffmpeg-python
+
+numpy~=1.19.1
+requests~=2.24.0
+librosa~=0.8.0
+scikit-learn~=0.23.2
+six~=1.15.0
