@@ -35,7 +35,7 @@ class StyleGANModel:
             print('i will use all the GPU memory i want and you cant stop me')
 
         self.model_path = model_path
-        self.model, self.graph,  self.sess, self.input_shape = self.load_model(model_path)
+        self.model, self.graph,  self.sess, self.input_shape, self.output_shape = self.load_model(model_path)
         self.device = 'gpu'
         self.base_dlatent = None
 
@@ -61,8 +61,9 @@ class StyleGANModel:
                 # Gs = Long-term average of the generator. Yields higher-quality results than instantaneous snapshot.
 
         input_shape = Gs.input_shape[1]
-        print('model loaded, input shape:', input_shape)
-        return Gs, graph, sess, input_shape
+        output_shape = Gs.output_shape[2:]
+        print('model loaded, input shape:', input_shape, 'output shape:', output_shape)
+        return Gs, graph, sess, input_shape, output_shape
 
     def run_image(self, latent_vecs: np.ndarray, as_bytes=True, use_base_dlatent=False):
         with self.sess.as_default():

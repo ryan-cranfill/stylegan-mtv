@@ -82,8 +82,9 @@ def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_ch
 @click.option('--displacement_factor', default=0.1, help='Displacement factor', type=float)
 @click.option('--n_points', default=3, help='Number of points to interpolate between', type=int)
 @click.option('-l', '--likes_file', default=None, help='Path to likes file pickle', type=str)
+@click.option('--stream', is_flag=True, help='Stream to ffmpeg instead of writing to tmp')
 def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
-                   input_path, output_path, window_size, displacement_factor, n_points, likes_file, youtube_url):
+                   input_path, output_path, window_size, displacement_factor, n_points, likes_file, youtube_url, stream):
     if youtube_url:
         input_path = download_audio_from_youtube(youtube_url)
     else:
@@ -96,11 +97,11 @@ def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chun
         output_path = make_output_path(input_path)
 
     print('================ PARAMETERS')
-    print(model_name, fps, random_seed, input_path, output_path, duration, )
+    print(model_name, fps, random_seed, input_path, output_path, duration, stream)
 
     processor = SpectrogramInterpolationOfflineProcessor(model_name, fps, random_seed, frame_chunk_size)
     processor.process_file(input_path, output_path, start, duration, sr, not no_write, window_size, displacement_factor,
-                           None, n_points, likes_file)
+                           None, n_points, likes_file, stream)
 
 
 cli.add_command(spectro)
