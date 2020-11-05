@@ -2,12 +2,13 @@
 # todo: should this be refactored into src?
 # todo: should this be a click interface?
 import os
-import argparse
 import pickle
-from tqdm import tqdm
+import argparse
 import PIL.Image
-from PIL import ImageFilter
 import numpy as np
+from tqdm import tqdm
+from pathlib import Path
+from PIL import ImageFilter
 
 from src import add_src_to_sys_path
 
@@ -52,6 +53,7 @@ def main():
     parser.add_argument('--model_res', default=1024, help='The dimension of images in the StyleGAN model', type=int)
     parser.add_argument('--batch_size', default=1, help='Batch size for generator and perceptual model', type=int)
     parser.add_argument('--optimizer', default='ggt', help='Optimization algorithm used for optimizing dlatents')
+    parser.add_argument('--skip_existing', default=False, help='Skip pictures with existing latent representations if found', type=str2bool, nargs='?', const=True)
 
     # Perceptual model params
     parser.add_argument('--vgg_url', default='https://drive.google.com/uc?id=1N2-m9qszOeVC9Tq77WxsLnuWwOedQiD2', help='Fetch VGG model on from this URL')
@@ -139,6 +141,18 @@ def main():
     perceptual_model.build_perceptual_model(generator, discriminator_network)
 
     ff_model = None
+
+    if args.skip_existing:
+        dlatent_path = Path(args.dlatent_dir)
+        existing_images = [i.stem for i in dlatent_path.glob('*.npy')]
+        final_ref_images = []
+        for img in ref_images:
+            img_path = Path(img)
+            if img_path.stem in existing_images:
+                print('skipping', img_path.stem)
+            else:
+                final_ref_images.append(img)
+        ref_images = final_ref_images
 
     # Optimize (only) dlatents by minimizing perceptual loss between reference and generated images in feature space
     for images_batch in tqdm(split_to_batches(ref_images, args.batch_size), total=len(ref_images)//args.batch_size):
