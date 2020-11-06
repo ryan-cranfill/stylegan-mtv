@@ -1,3 +1,4 @@
+import json
 import math
 import pickle
 import librosa
@@ -6,23 +7,47 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 
+from src.settings import LATENT_DIR
 from .base import BaseOfflineProcessor
 from src.utils import warn
+
+
+def checkpoints_from_config_file(config_file):
+    print('reading configuration from', config_file)
+    checkpoints = []
+
+    with open(config_file) as f:
+        config = json.load(f)
+
+    for step in config['steps']:
+        vec = np.load(str(LATENT_DIR / step['name']))
+        checkpoints.append((step['time'], vec))
+        print(step)
+
+    return checkpoints
 
 
 class InterpolationOfflineProcessor(BaseOfflineProcessor):
     def __init__(self, model_name='cats', fps=5, random_seed=False, frame_chunk_size=500):
         super().__init__(model_name, fps, random_seed, frame_chunk_size)
 
-    def make_checkpoints(self, duration, n_points=3, likes_file=None):
+    def make_checkpoints(self, duration, n_points=3, likes_file=None, config_file=None, likes_dir=None):
         """
         Returns a list of tuples with timestamps of when to hit which random point
         """
+        if config_file:
+            return checkpoints_from_config_file(config_file)
+
+        rng = np.random.default_rng()
+
         if likes_file:
             with open(likes_file, 'rb') as f:
                 likes = pickle.load(f)
-            rng = np.random.default_rng()
             points = rng.choice(likes, n_points)
+        elif likes_dir:
+            likes_path = Path(likes_dir)
+            vecs = [np.load(str(p)) for p in likes_path.glob('*.npy')]
+            points = rng.choice(vecs, n_points)
         else:
             points = self.get_random_points(n_points)
 
@@ -33,11 +58,13 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
 
         return checkpoints
 
-    def interp_between_checkpoints(self, timestamp: float, beginning: tuple, end: tuple):
+    def interp_between_checkpoints(self, timestamp: float, beginning: tuple, end: tuple, is_dlatent=False):
         beginning_ts, beginning_vec = beginning
         end_ts, end_vec = end
         timestamp_centered = timestamp - beginning_ts
         ratio = timestamp_centered / (end_ts - beginning_ts)
+        if is_dlatent:
+            return (((1 - ratio) * beginning_vec) + (end_vec * ratio))
         return (((1 - ratio) * beginning_vec) + (end_vec * ratio)).reshape(1, -1)
 
     def get_images(self, sound_data, total_frames, duration, n_points, likes_file=None):
