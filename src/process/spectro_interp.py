@@ -48,7 +48,7 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
             if magnitude < 0.001:
                 magnitude = 0.001
 
-            interp_vec = self.interp_between_checkpoints(timestamp, beginning, end, is_dlatent)
+            interp_vec = self.interp_between_checkpoints(timestamp, beginning, end, is_dlatent, is_dlatent)
 
             if is_dlatent:
                 image = self.model.run_image(spectrogram_vec * magnitude, as_bytes=False, dlatent=interp_vec, latent_strength=0.025)

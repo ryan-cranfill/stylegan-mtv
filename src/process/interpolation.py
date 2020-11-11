@@ -12,6 +12,17 @@ from .base import BaseOfflineProcessor
 from src.utils import warn
 
 
+def ramp_to_edges(timestamp: float, beginning: float, end: float, k: float = 3):
+    timestamp_centered = timestamp - beginning
+    seg_duration = (end - beginning)
+    ratio = timestamp_centered / seg_duration
+    if ratio == 0:
+        ratio = 0.0000001
+    elif ratio == 1:
+        ratio = 0.9999999
+    return 1 / (1 + (ratio / (1 - ratio)) ** -k)
+
+
 def checkpoints_from_config_file(config_file):
     print('reading configuration from', config_file)
     checkpoints = []
@@ -58,13 +69,16 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
 
         return checkpoints
 
-    def interp_between_checkpoints(self, timestamp: float, beginning: tuple, end: tuple, is_dlatent=False):
+    def interp_between_checkpoints(self, timestamp: float, beginning: tuple, end: tuple, is_dlatent=False, ramp=False):
         beginning_ts, beginning_vec = beginning
         end_ts, end_vec = end
         timestamp_centered = timestamp - beginning_ts
-        ratio = timestamp_centered / (end_ts - beginning_ts)
+        if ramp:
+            ratio = ramp_to_edges(timestamp, beginning_ts, end_ts)
+        else:
+            ratio = timestamp_centered / (end_ts - beginning_ts)
         if is_dlatent:
-            return (((1 - ratio) * beginning_vec) + (end_vec * ratio))
+            return ((1 - ratio) * beginning_vec) + (end_vec * ratio)
         return (((1 - ratio) * beginning_vec) + (end_vec * ratio)).reshape(1, -1)
 
     def get_images(self, sound_data, total_frames, duration, n_points, likes_file=None):
