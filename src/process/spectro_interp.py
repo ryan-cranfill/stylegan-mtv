@@ -23,10 +23,11 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
         super().__init__(model_name, fps, random_seed, frame_chunk_size)
 
     def get_images(self, sound_data, sample_rate, spectrogram_params: dict, window_size=1, displacement_factor=0.1,
-                   n_points=3, likes_file=None, config_file=None, likes_dir=None):
+                   n_points=3, likes_file=None, config_file=None, likes_dir=None, images_dir=None, sound_factor=0.1,
+                   interp_time=1):
         spectrogram = self.sound_to_mel_spectrogram(sound_data, sample_rate, spectrogram_params)
         duration = sound_data.shape[0] / sample_rate
-        checkpoints = self.make_checkpoints(duration, n_points, likes_file, config_file, likes_dir)
+        checkpoints = self.make_checkpoints(duration, n_points, likes_file, config_file, likes_dir, images_dir)
 
         is_dlatent = config_file is not None or likes_dir is not None
 
@@ -43,15 +44,17 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
                 beginning, end = checkpoints[checkpoint_idx], checkpoints[checkpoint_idx + 1]
 
             # todo: clamp this value? use a log?
-            magnitude = np.linalg.norm(frame) / 20000
-            magnitude = np.log(magnitude)
+            magnitude = np.linalg.norm(frame) / 15000
+            # magnitude = np.log(magnitude)
             if magnitude < 0.001:
                 magnitude = 0.001
 
-            interp_vec = self.interp_between_checkpoints(timestamp, beginning, end, is_dlatent, is_dlatent)
+            interp_vec = self.interp_between_checkpoints(timestamp, beginning, end, is_dlatent, interp_time)
 
             if is_dlatent:
-                image = self.model.run_image(spectrogram_vec * magnitude, as_bytes=False, dlatent=interp_vec, latent_strength=0.025)
+                # image = self.model.run_image(spectrogram_vec * magnitude, as_bytes=False, dlatent=interp_vec, sound_factor=sound_factor)
+                image = self.model.run_image(spectrogram_vec, as_bytes=False, dlatent=interp_vec,
+                                             sound_factor=sound_factor*magnitude)
             else:
                 latent_vec = spectrogram_vec * interp_vec
                 # latent_vec = spectrogram_vec * interp_vec * magnitude
@@ -69,7 +72,8 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
 
     def process_file(self, input_path: str, output_path: str, start=0, duration=None, sr=None,
                      write=True, window_size=1, displacement_factor=0.1, spectrogram_params=None, n_points=3,
-                     likes_file=None, config_file=None, likes_dir=None):
+                     likes_file=None, config_file=None, likes_dir=None, images_dir=None, sound_factor=0.1,
+                     interp_time=1):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.temp_path = Path(self.temp_dir.name)
 
@@ -78,7 +82,7 @@ class SpectrogramInterpolationOfflineProcessor(SpectrogramOfflineProcessor, Inte
         sound_data, sample_rate = librosa.load(input_path, sr=sr, offset=start, duration=duration)
 
         self.get_images(sound_data, sample_rate, spectrogram_params, window_size, displacement_factor, n_points,
-                        likes_file, config_file, likes_dir)
+                        likes_file, config_file, likes_dir, images_dir, sound_factor, interp_time)
 
         duration = sound_data.shape[0] / sample_rate
         return self.create_video(duration, input_path, output_path, write=write, start=start)

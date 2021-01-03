@@ -12,15 +12,33 @@ from .base import BaseOfflineProcessor
 from src.utils import warn, filter_latent_reps_by_images
 
 
-def ramp_to_edges(timestamp: float, beginning: float, end: float, k: float = 3):
+# def ramp_to_edges(timestamp: float, beginning: float, end: float, k: float = 3):
+#     timestamp_centered = timestamp - beginning
+#     seg_duration = (end - beginning)
+#     ratio = timestamp_centered / seg_duration
+#     if ratio == 0:
+#         ratio = 0.0000001
+#     elif ratio == 1:
+#         ratio = 0.9999999
+#     return 1 / (1 + (ratio / (1 - ratio)) ** -k)
+
+def ramp_to_edges(timestamp: float, beginning: float, end: float, interp_time: float = .9):
+    # interp time - what pct should i spend doing interpolation between points
+    assert 0 <= interp_time <= 1
+    static_pct = 1 - interp_time
+    static_h = static_pct / 2
+    # interp_start, interp_end = (1 + static_h) * beginning, (1 - static_h) * end
+
     timestamp_centered = timestamp - beginning
     seg_duration = (end - beginning)
-    ratio = timestamp_centered / seg_duration
-    if ratio == 0:
-        ratio = 0.0000001
-    elif ratio == 1:
-        ratio = 0.9999999
-    return 1 / (1 + (ratio / (1 - ratio)) ** -k)
+    interp_duration = seg_duration * interp_time
+    interp_start, interp_end = static_h * seg_duration, seg_duration - (static_h * seg_duration)
+    if timestamp_centered < interp_start:
+        return 0
+    elif timestamp_centered > interp_end:
+        return 1
+    else:
+        return (timestamp_centered - interp_start) / interp_duration
 
 
 def checkpoints_from_config_file(config_file):
@@ -42,7 +60,7 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
     def __init__(self, model_name='cats', fps=5, random_seed=False, frame_chunk_size=500):
         super().__init__(model_name, fps, random_seed, frame_chunk_size)
 
-    def make_checkpoints(self, duration, n_points=3, likes_file=None, config_file=None, likes_dir=None):
+    def make_checkpoints(self, duration, n_points=3, likes_file=None, config_file=None, likes_dir=None, images_dir=None):
         """
         Returns a list of tuples with timestamps of when to hit which random point
         """
@@ -72,12 +90,13 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
 
         return checkpoints
 
-    def interp_between_checkpoints(self, timestamp: float, beginning: tuple, end: tuple, is_dlatent=False, ramp=False):
+    def interp_between_checkpoints(self, timestamp: float, beginning: tuple, end: tuple, is_dlatent=False, interp_time=0.):
         beginning_ts, beginning_vec = beginning
         end_ts, end_vec = end
         timestamp_centered = timestamp - beginning_ts
-        if ramp:
-            ratio = ramp_to_edges(timestamp, beginning_ts, end_ts)
+        if 1 > interp_time > 0:
+            # ratio = ramp_to_edges(timestamp, beginning_ts, end_ts, k=25)
+            ratio = ramp_to_edges(timestamp, beginning_ts, end_ts, interp_time=interp_time)
         else:
             ratio = timestamp_centered / (end_ts - beginning_ts)
         if is_dlatent:

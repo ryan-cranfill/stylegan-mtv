@@ -65,13 +65,13 @@ class StyleGANModel:
         print('model loaded, input shape:', input_shape, 'output shape:', output_shape)
         return Gs, graph, sess, input_shape, output_shape
 
-    def run_image(self, latent_vecs: np.ndarray, as_bytes=True, dlatent=None, latent_strength=0.25):
+    def run_image(self, latent_vecs: np.ndarray, as_bytes=True, dlatent=None, sound_factor=0.025):
         with self.sess.as_default():
             with self.graph.as_default():
                 src_dlatents = self.model.components.mapping.run(latent_vecs, None)  # [seed, layer, component]
 
                 if dlatent is not None:
-                    src_dlatents = (src_dlatents * latent_strength) + dlatent
+                    src_dlatents = (src_dlatents * sound_factor) + dlatent
 
                 images = self.model.components.synthesis.run(src_dlatents, randomize_noise=False,
                                                              truncation_psi=0.5, output_transform=self.img_fmt)

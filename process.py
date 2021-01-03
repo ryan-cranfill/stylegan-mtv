@@ -83,10 +83,13 @@ def interp(model_name, n_points, fps, random_seed, start, duration, sr, frame_ch
 @click.option('--n_points', default=3, help='Number of points to interpolate between', type=int)
 @click.option('-l', '--likes_file', default=None, help='Path to likes file pickle', type=str)
 @click.option('--likes_dir', default=None, help='Directory with encoded .npy files to use as interpolation anchors', type=str)
+@click.option('--images_dir', default=None, help='Directory of photos to filter encoded .npy by', type=str)
 @click.option('-c', '--config_file', default=None, help='Path to configuration json file', type=str)
+@click.option('--sound_factor', default=.1, help='Contribution of sound', type=float)
+@click.option('--interp_time', default=1, help='How much time per image to interpolate', type=float)
 def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
-                   input_path, output_path, window_size, displacement_factor, n_points, likes_file, likes_dir,
-                   youtube_url, config_file):
+                   input_path, output_path, window_size, displacement_factor, n_points, likes_file, likes_dir, images_dir,
+                   youtube_url, config_file, sound_factor, interp_time):
     if youtube_url:
         input_path = download_audio_from_youtube(youtube_url)
     else:
@@ -103,7 +106,9 @@ def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chun
 
     processor = SpectrogramInterpolationOfflineProcessor(model_name, fps, random_seed, frame_chunk_size)
     processor.process_file(input_path, output_path, start, duration, sr, not no_write, window_size, displacement_factor,
-                           None, n_points, likes_file, config_file, likes_dir)
+                           None, n_points, likes_file, config_file, likes_dir, images_dir, sound_factor, interp_time)
+
+
 @click.command()
 @common_options
 @click.option('--text', default=None, help='Phrase to interp', type=str)
