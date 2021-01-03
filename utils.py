@@ -44,6 +44,9 @@ def make_output_path(input_path: [str, Path], out_dir=OUTPUT_DIR):
     if not isinstance(out_dir, Path):
         out_dir = Path(out_dir)
 
+    if not out_dir.exists():
+        out_dir.mkdir()
+
     out_path = out_dir / input_path.with_suffix('.mp4').parts[-1]
     return uniquify(out_path)
 
@@ -64,6 +67,9 @@ def download_audio_from_youtube(url):
     bestaudio = video.getbestaudio('m4a')
     filename = format_filename(f'{title}.{bestaudio.extension}')
     path = INPUT_DIR / filename
+
+    if not INPUT_DIR.exists():
+        INPUT_DIR.mkdir()
 
     if not path.exists():
         bestaudio.download(str(path))

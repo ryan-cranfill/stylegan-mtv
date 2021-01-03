@@ -23,7 +23,8 @@ Options:
   is helpful)
 - create a `models` directory and put your stylegan models in there
 - `docker build -t mtv .` to build container (will take a few minutes to download and build everything)
-- `docker run --gpus all -it --rm mtv bash` for an ephemeral container, or don't use `--rm` if you want it to persist
 
-- `nvidia-docker run --gpus all --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 -v ~/output:/code/output -it --rm mtv bash`
+- start a dev machine that gets deleted when you're done with a command like 
+  `docker run --gpus all --shm-size=4g --ulimit memlock=-1 --ulimit stack=97108864 -v $PWD:/code -it --rm mtv bash` 
+  or don't use `--rm` if you want it to persist
 - test with something like `python process.py spectro -y https://www.youtube.com/watch?v=_V2sBURgUBI -d 15 --window_size 30`

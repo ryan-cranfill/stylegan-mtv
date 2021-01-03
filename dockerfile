@@ -27,8 +27,9 @@ RUN pip install click==7.1.2
 RUN pip install pafy==0.5.5
 RUN pip install ffmpeg-python==0.2.0
 RUN pip install librosa==0.8.0
+RUN pip install spacy==2.3.5
 
 WORKDIR /code
 RUN mkdir input
 RUN mkdir output
-COPY . .
+# COPY . .
