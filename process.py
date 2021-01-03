@@ -2,7 +2,7 @@ import click
 
 from utils import make_output_path, download_audio_from_youtube
 from src import add_src_to_sys_path, SpectrogramOfflineProcessor, InterpolationOfflineProcessor, \
-    SpectrogramInterpolationOfflineProcessor
+    SpectrogramInterpolationOfflineProcessor, WordsOfflineProcessor
 
 add_src_to_sys_path()
 
@@ -104,11 +104,38 @@ def spectro_interp(model_name, fps, random_seed, start, duration, sr, frame_chun
     processor = SpectrogramInterpolationOfflineProcessor(model_name, fps, random_seed, frame_chunk_size)
     processor.process_file(input_path, output_path, start, duration, sr, not no_write, window_size, displacement_factor,
                            None, n_points, likes_file, config_file, likes_dir)
+@click.command()
+@common_options
+@click.option('--text', default=None, help='Phrase to interp', type=str)
+@click.option('--interp_time', default=1, help='How much time per image to interpolate', type=float)
+def text_interp(model_name, fps, random_seed, start, duration, sr, frame_chunk_size, no_write,
+                   input_path, output_path, youtube_url, text, interp_time):
+    input_path = None
+
+    if not output_path:
+        # output_path = make_output_path(input_path)
+        raise ValueError('Must provide output path!')
+
+    # if not text:
+    #     raise ValueError('Must provide --text!')
+
+    if not duration:
+        duration = 15
+
+    if not text:
+        text = input('input text to interpolate:')
+
+    print('================ PARAMETERS')
+    print(model_name, fps, random_seed, input_path, output_path, duration,)
+
+    processor = WordsOfflineProcessor(model_name, fps, random_seed, frame_chunk_size)
+    processor.process_file(output_path, text, duration, not no_write, interp_time)
 
 
 cli.add_command(spectro)
 cli.add_command(interp)
 cli.add_command(spectro_interp)
+cli.add_command(text_interp)
 
 if __name__ == '__main__':
     cli()

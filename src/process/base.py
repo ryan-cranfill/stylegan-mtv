@@ -85,15 +85,19 @@ class BaseOfflineProcessor:
 
         return final_images
 
-    def create_video(self, duration, input_path, output_path, write=True, start=0):
+    def create_video(self, duration, input_path, output_path, write=True, start=0, sound=True):
         print(f'images generated, outputting to clip starting at {start} for {duration} seconds...')
 
         vid_in = ffmpeg.input(str(self.temp_path / '*.bmp'), pattern_type='glob', framerate=self.fps)
-        audio_in = ffmpeg.input(input_path, ss=start, t=duration)
+        if sound:
+            audio_in = ffmpeg.input(input_path, ss=start, t=duration)
 
-        joined = ffmpeg.concat(vid_in, audio_in, v=1, a=1).node
-        out = ffmpeg.output(joined[0], joined[1], output_path, pix_fmt='yuv420p').overwrite_output()
-        out.run()
+            joined = ffmpeg.concat(vid_in, audio_in, v=1, a=1).node
+            out = ffmpeg.output(joined[0], joined[1], output_path, pix_fmt='yuv420p').overwrite_output()
+            out.run()
+        else:
+            out = ffmpeg.output(vid_in, output_path, pix_fmt='yuv420p').overwrite_output()
+            out.run()
 
         self.temp_dir.cleanup()
 
