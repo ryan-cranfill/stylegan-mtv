@@ -9,7 +9,7 @@ from pathlib import Path
 
 from src.settings import LATENT_DIR
 from .base import BaseOfflineProcessor
-from src.utils import warn
+from src.utils import warn, filter_latent_reps_by_images
 
 
 def ramp_to_edges(timestamp: float, beginning: float, end: float, k: float = 3):
@@ -54,11 +54,14 @@ class InterpolationOfflineProcessor(BaseOfflineProcessor):
         if likes_file:
             with open(likes_file, 'rb') as f:
                 likes = pickle.load(f)
-            points = rng.choice(likes, n_points)
+            points = rng.choice(likes, n_points, not n_points <= len(likes))
         elif likes_dir:
             likes_path = Path(likes_dir)
-            vecs = [np.load(str(p)) for p in likes_path.glob('*.npy')]
-            points = rng.choice(vecs, n_points)
+            if not images_dir:
+                vecs = [np.load(str(p)) for p in likes_path.glob('*.npy')]
+            else:
+                vecs = [np.load(str(p)) for p in filter_latent_reps_by_images(likes_dir, images_dir)]
+            points = rng.choice(vecs, n_points, not n_points <= len(vecs))
         else:
             points = self.get_random_points(n_points)
 

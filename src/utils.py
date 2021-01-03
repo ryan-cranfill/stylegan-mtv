@@ -1,7 +1,10 @@
 import sys
 import numpy as np
+from pathlib import Path
 
 from .settings import MODEL_DIR, LATENT_DIR, LIB_DIR
+
+IMAGE_TYPES = ['.png', '.jpg', '.jpeg']
 
 
 def warn(*values):
@@ -42,6 +45,24 @@ def load_latent_reps():
     reps = {name: np.expand_dims(np.load(path), axis=0)  # is this expand_dims necessary?
             for name, path in latent_reps_paths.items()}
     return reps
+
+
+def filter_stems_for_path(path: (Path, str), types: (list, tuple)):
+    return {p.resolve().stem for p in Path(path).glob("*.*") if p.suffix in types}
+
+
+def get_image_stems(path):
+    return filter_stems_for_path(path, IMAGE_TYPES)
+
+
+def get_numpy_stems(path):
+    return filter_stems_for_path(path, ['.npy'])
+
+
+def filter_latent_reps_by_images(latent_reps_dir, images_dir):
+    image_stems = get_image_stems(images_dir)
+    keeps = [i for i in list(Path(latent_reps_dir).glob('*.npy')) if i.stem in image_stems]
+    return keeps
 
 
 if __name__ == '__main__':
